@@ -23,11 +23,11 @@ geth:
     repository: ethereum/client-go
     tag: latest
     pullPolicy: IfNotPresent
-  
+
   # Sync mode: "snap" (default, ~600GB), "full" (~1TB+)
   # Note: "light" mode is deprecated in newer Geth versions
   syncMode: snap
-  
+
   # Resource limits
   resources:
     requests:
@@ -36,16 +36,16 @@ geth:
     limits:
       memory: "4Gi"
       cpu: "1000m"
-  
+
   # Storage configuration
   storage:
     size: 600Gi
     storageClassName: local-path
-  
+
   # Network settings
   maxPeers: 30
   cache: 512
-  
+
   # RPC configuration
   http:
     enabled: true
@@ -53,28 +53,28 @@ geth:
     api: "eth,net,web3,admin"
     vhosts: "*"
     corsdomain: "*"
-  
+
   ws:
     enabled: true
     port: 8546
     api: "eth,net,web3"
     origins: "*"
-  
+
   # Auth RPC for consensus layer
   authrpc:
     port: 8551
     vhosts: "*"
-  
+
   # Metrics
   metrics:
     enabled: true
     port: 6060
-  
+
   # P2P ports
   p2p:
     tcpPort: 30303
     udpPort: 30303
-  
+
   # Additional Geth flags
   extraFlags: |
     --txlookuplimit=0
@@ -86,7 +86,7 @@ prysm:
     repository: gcr.io/prysmaticlabs/prysm/beacon-chain
     tag: stable
     pullPolicy: IfNotPresent
-  
+
   # Resource limits
   resources:
     requests:
@@ -95,45 +95,45 @@ prysm:
     limits:
       memory: "12Gi"
       cpu: "2000m"
-  
+
   # Storage configuration
   storage:
     size: 40Gi
     storageClassName: local-path
-  
+
   # Checkpoint sync for faster initial sync
   checkpointSync:
     enabled: true
     url: "https://beaconstate.info"
-  
+
   # Storage optimization
   slotsPerArchivePoint: 8192
   historicalSlasherNode: false
-  
+
   # RPC configuration
   rpc:
     port: 4000
-  
+
   grpc:
     port: 3500
-  
+
   # Metrics
   metrics:
     enabled: true
     port: 8080
-  
+
   # P2P ports
   p2p:
     tcpPort: 13000
     udpPort: 12000
-  
+
   # Additional Prysm flags
   extraFlags: ""
 
 # Monitoring stack configuration
 monitoring:
   enabled: true
-  
+
   # Prometheus configuration
   prometheus:
     enabled: true
@@ -141,7 +141,7 @@ monitoring:
       repository: prom/prometheus
       tag: latest
       pullPolicy: IfNotPresent
-    
+
     resources:
       requests:
         memory: "512Mi"
@@ -149,17 +149,17 @@ monitoring:
       limits:
         memory: "2Gi"
         cpu: "500m"
-    
+
     storage:
       size: 10Gi
       storageClassName: local-path
-    
+
     retention: "7d"
-    
+
     service:
       type: ClusterIP
       port: 9090
-  
+
   # Grafana configuration
   grafana:
     enabled: true
@@ -167,7 +167,7 @@ monitoring:
       repository: grafana/grafana
       tag: latest
       pullPolicy: IfNotPresent
-    
+
     resources:
       requests:
         memory: "256Mi"
@@ -175,27 +175,27 @@ monitoring:
       limits:
         memory: "512Mi"
         cpu: "250m"
-    
+
     storage:
       size: 5Gi
       storageClassName: local-path
-    
+
     # Admin credentials
     adminUser: admin
     adminPassword: admin
-    
+
     service:
       type: ClusterIP
       port: 3000
 
 # Peer Monitor configuration
 peerMonitor:
-  enabled: false
+  enabled: true
   image:
-    repository: ghcr.io/yourusername/go-peer-monitor
+    repository: peer-monitor
     tag: latest
-    pullPolicy: Always
-  
+    pullPolicy: IfNotPresent
+
   resources:
     requests:
       memory: "64Mi"
@@ -203,7 +203,7 @@ peerMonitor:
     limits:
       memory: "128Mi"
       cpu: "100m"
-  
+
   service:
     type: ClusterIP
     port: 8080
