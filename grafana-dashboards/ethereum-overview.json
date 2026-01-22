@@ -1,0 +1,57 @@
+{
+  "dashboard": {
+    "title": "Ethereum Node Overview",
+    "tags": ["ethereum", "geth", "prysm"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "Peer Count",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "geth_peer_count",
+            "legendFormat": "Connected Peers"
+          }
+        ]
+      },
+      {
+        "title": "Sync Status",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "eth_syncing",
+            "legendFormat": "Syncing"
+          }
+        ]
+      },
+      {
+        "title": "Block Height",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "chain_head_block",
+            "legendFormat": "Current Block"
+          }
+        ]
+      },
+      {
+        "title": "Network Traffic",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(p2p_ingress_bytes_total[5m])",
+            "legendFormat": "Ingress"
+          },
+          {
+            "expr": "rate(p2p_egress_bytes_total[5m])",
+            "legendFormat": "Egress"
+          }
+        ]
+      }
+    ]
+  }
+}

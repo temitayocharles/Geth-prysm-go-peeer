@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: geth-config
+  namespace: ethereum
+data:
+  NETWORK: "mainnet"
+  GETH_OPTS: "--http --http.addr=0.0.0.0 --http.vhosts=* --http.api=eth,net,web3,admin --http.corsdomain=* --authrpc.addr=0.0.0.0 --authrpc.vhosts=* --authrpc.jwtsecret=/secrets/jwt.hex --metrics --metrics.addr=0.0.0.0 --maxpeers=50"

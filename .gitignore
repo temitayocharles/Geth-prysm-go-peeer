@@ -1,0 +1,34 @@
+# JWT Secret
+jwt.hex
+
+# Go
+go-peer-monitor/go.sum
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Kubernetes
+*.kubeconfig
+
+# Build artifacts
+bin/
+dist/
+
+# Logs
+*.log

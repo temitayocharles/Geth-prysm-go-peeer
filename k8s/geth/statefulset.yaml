@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: geth
+  namespace: ethereum
+spec:
+  serviceName: geth
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geth
+  template:
+    metadata:
+      labels:
+        app: geth
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "6060"
+        prometheus.io/path: "/debug/metrics/prometheus"
+    spec:
+      initContainers:
+      - name: init-jwt
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          if [ ! -f /secrets/jwt.hex ]; then
+            echo "Generating JWT secret..."
+            hexdump -vn32 -e'4/4 "%08x" 1 "\n"' /dev/urandom > /secrets/jwt.hex
+          fi
+          chmod 644 /secrets/jwt.hex
+        volumeMounts:
+        - name: jwt-secret
+          mountPath: /secrets
+      containers:
+      - name: geth
+        image: ethereum/client-go:latest
+        command:
+        - sh
+        - -c
+        - |
+          exec geth \
+            --mainnet \
+            --datadir=/data \
+            --http \
+            --http.addr=0.0.0.0 \
+            --http.port=8545 \
+            --http.vhosts=* \
+            --http.api=eth,net,web3,admin \
+            --http.corsdomain=* \
+            --ws \
+            --ws.addr=0.0.0.0 \
+            --ws.port=8546 \
+            --ws.api=eth,net,web3 \
+            --ws.origins=* \
+            --authrpc.addr=0.0.0.0 \
+            --authrpc.port=8551 \
+            --authrpc.vhosts=* \
+            --authrpc.jwtsecret=/secrets/jwt.hex \
+            --metrics \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port=6060 \
+            --maxpeers=50 \
+            --syncmode=snap \
+            --cache=4096
+        ports:
+        - containerPort: 8545
+          name: http-rpc
+        - containerPort: 8546
+          name: ws-rpc
+        - containerPort: 8551
+          name: authrpc
+        - containerPort: 30303
+          name: p2p
+          protocol: TCP
+        - containerPort: 30303
+          name: p2p-udp
+          protocol: UDP
+        - containerPort: 6060
+          name: metrics
+        volumeMounts:
+        - name: geth-data
+          mountPath: /data
+        - name: jwt-secret
+          mountPath: /secrets
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2000m"
+          limits:
+            memory: "16Gi"
+            cpu: "4000m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8545
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8545
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: jwt-secret
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: geth-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 1Ti

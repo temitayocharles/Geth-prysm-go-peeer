@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prysm-beacon
+  namespace: ethereum
+spec:
+  serviceName: prysm-beacon
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prysm-beacon
+  template:
+    metadata:
+      labels:
+        app: prysm-beacon
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      initContainers:
+      - name: init-jwt
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          if [ ! -f /secrets/jwt.hex ]; then
+            echo "Generating JWT secret..."
+            hexdump -vn32 -e'4/4 "%08x" 1 "\n"' /dev/urandom > /secrets/jwt.hex
+          fi
+          chmod 644 /secrets/jwt.hex
+        volumeMounts:
+        - name: jwt-secret
+          mountPath: /secrets
+      - name: wait-for-geth
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for Geth to be ready..."
+          until nc -z geth.ethereum.svc.cluster.local 8551; do
+            echo "Geth not ready yet..."
+            sleep 5
+          done
+          echo "Geth is ready!"
+      containers:
+      - name: beacon-chain
+        image: gcr.io/prysmaticlabs/prysm/beacon-chain:stable
+        args:
+        - --mainnet
+        - --datadir=/data
+        - --execution-endpoint=http://geth.ethereum.svc.cluster.local:8551
+        - --jwt-secret=/secrets/jwt.hex
+        - --rpc-host=0.0.0.0
+        - --rpc-port=4000
+        - --grpc-gateway-host=0.0.0.0
+        - --grpc-gateway-port=3500
+        - --monitoring-host=0.0.0.0
+        - --monitoring-port=8080
+        - --p2p-tcp-port=13000
+        - --p2p-udp-port=12000
+        - --accept-terms-of-use
+        - --checkpoint-sync-url=https://beaconstate.info
+        - --genesis-beacon-api-url=https://beaconstate.info
+        ports:
+        - containerPort: 4000
+          name: http-rpc
+        - containerPort: 3500
+          name: grpc
+        - containerPort: 8080
+          name: metrics
+        - containerPort: 13000
+          name: p2p-tcp
+          protocol: TCP
+        - containerPort: 12000
+          name: p2p-udp
+          protocol: UDP
+        volumeMounts:
+        - name: prysm-beacon-data
+          mountPath: /data
+        - name: jwt-secret
+          mountPath: /secrets
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1000m"
+          limits:
+            memory: "8Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 3500
+          initialDelaySeconds: 120
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 3500
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: jwt-secret
+        emptyDir: {}
+  volumeClaimTemplates:
+  - metadata:
+      name: prysm-beacon-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 500Gi
