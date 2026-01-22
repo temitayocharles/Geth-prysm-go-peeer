@@ -8,8 +8,8 @@ spec:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 50Gi
-  storageClassName: standard
+      storage: 10Gi
+  storageClassName: local-path
 ---
 apiVersion: apps/v1
 kind: Deployment

@@ -1,0 +1,120 @@
+{{- if .Values.geth.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: geth
+  namespace: {{ .Values.namespace.ethereum }}
+  labels:
+    {{- include "ethereum-node.labels" . | nindent 4 }}
+    app: geth
+spec:
+  serviceName: geth
+  replicas: 1
+  selector:
+    matchLabels:
+      app: geth
+  template:
+    metadata:
+      labels:
+        app: geth
+      annotations:
+        {{- if .Values.geth.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.geth.metrics.port | quote }}
+        prometheus.io/path: "/debug/metrics/prometheus"
+        {{- end }}
+    spec:
+      enableServiceLinks: {{ .Values.enableServiceLinks }}
+      containers:
+      - name: geth
+        image: "{{ .Values.geth.image.repository }}:{{ .Values.geth.image.tag }}"
+        imagePullPolicy: {{ .Values.geth.image.pullPolicy }}
+        command:
+        - sh
+        - -c
+        - |
+          exec geth \
+            --{{ .Values.global.network }} \
+            --datadir=/data \
+            --syncmode={{ .Values.geth.syncMode }} \
+            {{- if .Values.geth.http.enabled }}
+            --http \
+            --http.addr=0.0.0.0 \
+            --http.port={{ .Values.geth.http.port }} \
+            --http.vhosts={{ .Values.geth.http.vhosts }} \
+            --http.api={{ .Values.geth.http.api }} \
+            --http.corsdomain={{ .Values.geth.http.corsdomain }} \
+            {{- end }}
+            {{- if .Values.geth.ws.enabled }}
+            --ws \
+            --ws.addr=0.0.0.0 \
+            --ws.port={{ .Values.geth.ws.port }} \
+            --ws.api={{ .Values.geth.ws.api }} \
+            --ws.origins={{ .Values.geth.ws.origins }} \
+            {{- end }}
+            --authrpc.addr=0.0.0.0 \
+            --authrpc.port={{ .Values.geth.authrpc.port }} \
+            --authrpc.vhosts={{ .Values.geth.authrpc.vhosts }} \
+            --authrpc.jwtsecret=/secrets/jwt.hex \
+            {{- if .Values.geth.metrics.enabled }}
+            --metrics \
+            --metrics.addr=0.0.0.0 \
+            --metrics.port={{ .Values.geth.metrics.port }} \
+            {{- end }}
+            --maxpeers={{ .Values.geth.maxPeers }} \
+            --cache={{ .Values.geth.cache }} \
+            {{ .Values.geth.extraFlags }}
+        ports:
+        {{- if .Values.geth.http.enabled }}
+        - containerPort: {{ .Values.geth.http.port }}
+          name: http-rpc
+        {{- end }}
+        {{- if .Values.geth.ws.enabled }}
+        - containerPort: {{ .Values.geth.ws.port }}
+          name: ws-rpc
+        {{- end }}
+        - containerPort: {{ .Values.geth.authrpc.port }}
+          name: authrpc
+        - containerPort: {{ .Values.geth.p2p.tcpPort }}
+          name: p2p
+          protocol: TCP
+        - containerPort: {{ .Values.geth.p2p.udpPort }}
+          name: p2p-udp
+          protocol: UDP
+        {{- if .Values.geth.metrics.enabled }}
+        - containerPort: {{ .Values.geth.metrics.port }}
+          name: metrics
+        {{- end }}
+        volumeMounts:
+        - name: geth-data
+          mountPath: /data
+        - name: jwt-secret
+          mountPath: /secrets
+        resources:
+          {{- toYaml .Values.geth.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.geth.http.port }}
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.geth.http.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: jwt-secret
+        secret:
+          secretName: jwt-secret
+  volumeClaimTemplates:
+  - metadata:
+      name: geth-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.geth.storage.storageClassName }}
+      resources:
+        requests:
+          storage: {{ .Values.geth.storage.size }}
+{{- end }}

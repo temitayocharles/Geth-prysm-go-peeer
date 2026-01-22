@@ -20,16 +20,6 @@ openssl rand -hex 32 > $JWT_FILE
 echo "JWT secret generated and saved to $JWT_FILE"
 echo
 
-echo "Creating Kubernetes secret..."
-
-kubectl create namespace ethereum --dry-run=client -o yaml | kubectl apply -f -
-
-kubectl create secret generic jwt-secret \
-  --from-file=jwt.hex=$JWT_FILE \
-  --namespace=ethereum \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-echo "✓ JWT secret created in ethereum namespace"
+echo "✓ JWT secret generated and saved to $JWT_FILE"
 echo
-echo "To view the secret:"
-echo "  kubectl get secret jwt-secret -n ethereum -o jsonpath='{.data.jwt\.hex}' | base64 -d"
+echo "Note: The Kubernetes secret will be created by Helm during deployment."

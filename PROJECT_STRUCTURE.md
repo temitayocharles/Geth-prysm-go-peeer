@@ -304,3 +304,5 @@ When adding new components:
 3. Add deployment steps to deploy-all.sh
 4. Add health checks to check-status.sh
 5. Document in README.md
+
+

@@ -732,7 +732,56 @@ kubectl patch storageclass longhorn -p '{"metadata": {"annotations":{"storagecla
 
 ## Storage Optimization by Environment
 
-### Development
+### Low-Storage Setup (< 100GB Available)
+
+**⚠️ IMPORTANT: Limited Functionality**
+
+For devices with limited storage (~100GB or less), use **light client mode**:
+
+**Total Storage Required: ~75GB**
+- Geth (light mode): 20GB
+- Prysm (checkpoint only): 40GB
+- Prometheus: 10GB
+- Grafana: 5GB
+
+**Trade-offs:**
+- ❌ Cannot query historical data beyond recent blocks
+- ❌ Cannot run as validator
+- ❌ Depends on full nodes for data
+- ✅ Fast sync (minutes instead of days)
+- ✅ Minimal resource usage
+- ✅ Suitable for development/learning
+
+**Deployment:**
+
+```bash
+# Use light client configurations
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/monitoring/namespace.yaml
+
+# Deploy light versions
+kubectl apply -f k8s/geth/statefulset-light.yaml
+kubectl apply -f k8s/geth/service.yaml
+
+kubectl apply -f k8s/prysm/statefulset-light.yaml
+kubectl apply -f k8s/prysm/service.yaml
+
+# Deploy monitoring (already optimized for 15GB total)
+kubectl apply -f k8s/monitoring/
+```
+
+**Monitor Storage Usage:**
+
+```bash
+# Check actual storage consumption
+kubectl exec -n ethereum statefulset/geth -- df -h /data
+kubectl exec -n ethereum statefulset/prysm-beacon -- df -h /data
+
+# Monitor over time
+watch "kubectl get pvc -n ethereum -o json | jq -r '.items[] | \"\(.metadata.name): \(.status.capacity.storage)\"'"
+```
+
+### Development (100GB+ Available)
 
 ```yaml
 # Reduced storage for testing
@@ -742,7 +791,7 @@ spec:
       storage: 100Gi  # Geth (will sync partially)
 ```
 
-### Staging
+### Staging (500GB+ Available)
 
 ```yaml
 spec:
@@ -751,7 +800,7 @@ spec:
       storage: 500Gi  # Geth (enough for snap sync + some history)
 ```
 
-### Production
+### Production (1.5TB+ Available)
 
 ```yaml
 spec:

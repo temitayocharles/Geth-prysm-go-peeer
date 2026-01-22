@@ -1,0 +1,37 @@
+{{- if .Values.prysm.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: prysm-beacon
+  namespace: {{ .Values.namespace.ethereum }}
+  labels:
+    {{- include "ethereum-node.labels" . | nindent 4 }}
+    app: prysm-beacon
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: prysm-beacon
+  ports:
+  - name: http-rpc
+    port: {{ .Values.prysm.rpc.port }}
+    targetPort: http-rpc
+    protocol: TCP
+  - name: grpc
+    port: {{ .Values.prysm.grpc.port }}
+    targetPort: grpc
+    protocol: TCP
+  {{- if .Values.prysm.metrics.enabled }}
+  - name: metrics
+    port: {{ .Values.prysm.metrics.port }}
+    targetPort: metrics
+    protocol: TCP
+  {{- end }}
+  - name: p2p-tcp
+    port: {{ .Values.prysm.p2p.tcpPort }}
+    targetPort: p2p-tcp
+    protocol: TCP
+  - name: p2p-udp
+    port: {{ .Values.prysm.p2p.udpPort }}
+    targetPort: p2p-udp
+    protocol: UDP
+{{- end }}

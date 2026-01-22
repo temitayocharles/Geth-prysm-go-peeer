@@ -18,21 +18,8 @@ spec:
         prometheus.io/port: "8080"
         prometheus.io/path: "/metrics"
     spec:
+      enableServiceLinks: false
       initContainers:
-      - name: init-jwt
-        image: busybox:latest
-        command:
-        - sh
-        - -c
-        - |
-          if [ ! -f /secrets/jwt.hex ]; then
-            echo "Generating JWT secret..."
-            hexdump -vn32 -e'4/4 "%08x" 1 "\n"' /dev/urandom > /secrets/jwt.hex
-          fi
-          chmod 644 /secrets/jwt.hex
-        volumeMounts:
-        - name: jwt-secret
-          mountPath: /secrets
       - name: wait-for-geth
         image: busybox:latest
         command:
@@ -64,6 +51,8 @@ spec:
         - --accept-terms-of-use
         - --checkpoint-sync-url=https://beaconstate.info
         - --genesis-beacon-api-url=https://beaconstate.info
+        - --historical-slasher-node=false
+        - --slots-per-archive-point=8192
         ports:
         - containerPort: 4000
           name: http-rpc
@@ -84,32 +73,33 @@ spec:
           mountPath: /secrets
         resources:
           requests:
-            memory: "4Gi"
-            cpu: "1000m"
+            memory: "2Gi"
+            cpu: "500m"
           limits:
             memory: "8Gi"
-            cpu: "2000m"
+            cpu: "1000m"
         livenessProbe:
           httpGet:
-            path: /healthz
+            path: /eth/v1/node/health
             port: 3500
           initialDelaySeconds: 120
           periodSeconds: 30
         readinessProbe:
           httpGet:
-            path: /healthz
+            path: /eth/v1/node/health
             port: 3500
           initialDelaySeconds: 30
           periodSeconds: 10
       volumes:
       - name: jwt-secret
-        emptyDir: {}
+        secret:
+          secretName: jwt-secret
   volumeClaimTemplates:
   - metadata:
       name: prysm-beacon-data
     spec:
-      accessModes: ["ReadWriteOnce"]
-      storageClassName: standard
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: local-path
       resources:
         requests:
-          storage: 500Gi
+          storage: 20Gi

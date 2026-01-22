@@ -11,6 +11,9 @@ go-peer-monitor/go.sum
 *.test
 *.out
 vendor/
+# Ignore all documentation files except README.md
+*.md
+!README.md
 
 # IDE
 .vscode/
@@ -32,3 +35,12 @@ dist/
 
 # Logs
 *.log
+DEPLOYMENT_ENVIRONMENTS.md
+STORAGE_GUIDE.md
+STORAGE_OPTIMIZATION_CHANGES.md
+.gitignore
+DEPLOYMENT_ENVIRONMENTS.md
+DEPLOYMENT_ENVIRONMENTS.md
+DESIGN.md
+INTERVIEW_PREP.md
+NEXT_STEPS.md

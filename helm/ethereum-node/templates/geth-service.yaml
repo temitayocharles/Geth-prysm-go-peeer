@@ -1,0 +1,45 @@
+{{- if .Values.geth.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: geth
+  namespace: {{ .Values.namespace.ethereum }}
+  labels:
+    {{- include "ethereum-node.labels" . | nindent 4 }}
+    app: geth
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app: geth
+  ports:
+  {{- if .Values.geth.http.enabled }}
+  - name: http-rpc
+    port: {{ .Values.geth.http.port }}
+    targetPort: http-rpc
+    protocol: TCP
+  {{- end }}
+  {{- if .Values.geth.ws.enabled }}
+  - name: ws-rpc
+    port: {{ .Values.geth.ws.port }}
+    targetPort: ws-rpc
+    protocol: TCP
+  {{- end }}
+  - name: authrpc
+    port: {{ .Values.geth.authrpc.port }}
+    targetPort: authrpc
+    protocol: TCP
+  - name: p2p-tcp
+    port: {{ .Values.geth.p2p.tcpPort }}
+    targetPort: p2p
+    protocol: TCP
+  - name: p2p-udp
+    port: {{ .Values.geth.p2p.udpPort }}
+    targetPort: p2p-udp
+    protocol: UDP
+  {{- if .Values.geth.metrics.enabled }}
+  - name: metrics
+    port: {{ .Values.geth.metrics.port }}
+    targetPort: metrics
+    protocol: TCP
+  {{- end }}
+{{- end }}

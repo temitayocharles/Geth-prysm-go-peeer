@@ -6,6 +6,21 @@ This project deploys a fully functional Ethereum Mainnet node on Kubernetes usin
 - **Monitoring**: Prometheus & Grafana
 - **Peer Monitoring**: Custom Go application
 
+## 🚀 Deployment Options
+
+### 🎯 Helm (Recommended)
+Template-based deployment with easy configuration management:
+```bash
+./scripts/helm-deploy.sh          # Deploy Ethereum node (~75GB)
+```
+📖 **[Helm Guide](./HELM_GUIDE.md)**
+
+### ⚙️ kubectl (Traditional)
+Direct Kubernetes manifest deployment:
+```bash
+./scripts/deploy.sh               # Deploy using kubectl
+```
+
 ## Architecture Overview
 
 ```
@@ -46,10 +61,62 @@ This project deploys a fully functional Ethereum Mainnet node on Kubernetes usin
   - See [DEPLOYMENT_ENVIRONMENTS.md](DEPLOYMENT_ENVIRONMENTS.md) for detailed setup guides
 - `kubectl` configured to access your cluster
 - Docker installed (for building the peer monitor image)
-- At least 1.5TB of storage available for blockchain data
-- Minimum 16GB RAM and 4 CPU cores
+
+### Storage Requirements
+
+**⚠️ CHOOSE YOUR SETUP BASED ON AVAILABLE STORAGE:**
+
+| Storage Available | Setup Type | Total Required | Capabilities |
+|-------------------|------------|----------------|--------------|
+| **< 100GB** | **Light Node** | ~75GB | ✅ Real-time data<br>❌ No historical queries<br>❌ Cannot validate |
+| **100GB - 500GB** | **Partial Sync** | ~100GB | ✅ Recent history<br>⚠️ Limited historical queries |
+| **500GB - 1TB** | **Snap Sync** | ~500GB | ✅ Most features<br>✅ Good historical data |
+| **1.5TB+** | **Full Node** | ~1.5TB | ✅ Complete archive<br>✅ All features |
+
+**If you have < 100GB available storage**, use the light client setup documented below and in [DEPLOYMENT_ENVIRONMENTS.md](DEPLOYMENT_ENVIRONMENTS.md#low-storage-setup--100gb-available).
+
+### Minimum Resources
+- **Full Node**: 16GB RAM, 4 CPU cores
+- **Light Node**: 4GB RAM, 1 CPU core
 
 ## Quick Start
+
+### Choose Your Deployment Type
+
+#### Option A: Light Node (< 100GB Storage Available)
+
+If you have limited storage (less than 100GB available), use the light client configuration:
+
+```bash
+# Create namespaces
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/monitoring/namespace.yaml
+
+# Deploy Geth (Light Mode)
+kubectl apply -f k8s/geth/statefulset-light.yaml
+kubectl apply -f k8s/geth/service.yaml
+
+# Deploy Prysm (Minimal Storage)
+kubectl apply -f k8s/prysm/statefulset-light.yaml
+kubectl apply -f k8s/prysm/service.yaml
+
+# Deploy Monitoring
+kubectl apply -f k8s/monitoring/
+```
+
+**Storage Breakdown:**
+- Geth: 20GB (light sync)
+- Prysm: 40GB (checkpoint only)
+- Prometheus: 10GB
+- Grafana: 5GB
+- **Total: ~75GB**
+
+**Limitations:**
+- Cannot query old transactions/blocks
+- Cannot run as validator
+- Depends on other full nodes
+
+#### Option B: Full Node (1.5TB+ Storage Available)
 
 ### Part A: Deploy Ethereum Node with Monitoring
 
@@ -311,6 +378,14 @@ See [DESIGN.md](DESIGN.md) for detailed discussion of:
 ## License
 
 MIT
+
+## Additional Documentation
+
+- [DEPLOYMENT_ENVIRONMENTS.md](DEPLOYMENT_ENVIRONMENTS.md) - Detailed deployment guides for different platforms
+- [STORAGE_GUIDE.md](STORAGE_GUIDE.md) - Complete storage optimization and sizing guide
+- [DESIGN.md](DESIGN.md) - Architecture decisions and security considerations
+- [TESTING.md](TESTING.md) - Testing strategies and verification
+- [NEXT_STEPS.md](NEXT_STEPS.md) - Interview preparation and advanced topics
 
 ## Support
 

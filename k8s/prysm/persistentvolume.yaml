@@ -5,8 +5,8 @@ metadata:
   namespace: ethereum
 spec:
   accessModes:
-    - ReadWriteOnce
+  - ReadWriteOnce
   resources:
     requests:
-      storage: 500Gi
+      storage: 10Gi
   storageClassName: standard

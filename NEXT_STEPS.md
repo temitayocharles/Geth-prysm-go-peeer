@@ -273,3 +273,6 @@ If you have questions or need clarification, don't hesitate to reach out to the 
 2. Deploy to a clean cluster
 3. Walk through as if explaining to someone
 4. Time yourself - aim for 45 minutes with time for questions
+
+
+

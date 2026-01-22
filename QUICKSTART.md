@@ -13,7 +13,7 @@ Get your Ethereum node running in under 10 minutes!
 
 ```bash
 # Run the deployment script
-./scripts/deploy-all.sh
+./scripts/deploy.sh
 ```
 
 That's it! The script will:
@@ -212,3 +212,7 @@ For issues, check:
 3. Resource usage: `kubectl top pods -n ethereum`
 
 Still stuck? Open an issue in this repository.
+
+
+
+

@@ -1,0 +1,49 @@
+{{- if .Values.peerMonitor.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: peer-monitor
+  namespace: {{ .Values.namespace.ethereum }}
+  labels:
+    {{- include "ethereum-node.labels" . | nindent 4 }}
+    app: peer-monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: peer-monitor
+  template:
+    metadata:
+      labels:
+        app: peer-monitor
+    spec:
+      containers:
+      - name: peer-monitor
+        image: "{{ .Values.peerMonitor.image.repository }}:{{ .Values.peerMonitor.image.tag }}"
+        imagePullPolicy: {{ .Values.peerMonitor.image.pullPolicy }}
+        env:
+        - name: GETH_RPC_URL
+          value: "http://geth.{{ .Values.namespace.ethereum }}.svc.cluster.local:{{ .Values.geth.http.port }}"
+        ports:
+        - containerPort: {{ .Values.peerMonitor.service.port }}
+          name: http
+        resources:
+          {{- toYaml .Values.peerMonitor.resources | nindent 10 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: peer-monitor
+  namespace: {{ .Values.namespace.ethereum }}
+  labels:
+    {{- include "ethereum-node.labels" . | nindent 4 }}
+    app: peer-monitor
+spec:
+  type: {{ .Values.peerMonitor.service.type }}
+  ports:
+  - port: {{ .Values.peerMonitor.service.port }}
+    targetPort: {{ .Values.peerMonitor.service.port }}
+    name: http
+  selector:
+    app: peer-monitor
+{{- end }}

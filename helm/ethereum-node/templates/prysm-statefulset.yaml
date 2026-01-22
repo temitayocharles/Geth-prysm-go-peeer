@@ -1,0 +1,119 @@
+{{- if .Values.prysm.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prysm-beacon
+  namespace: {{ .Values.namespace.ethereum }}
+  labels:
+    {{- include "ethereum-node.labels" . | nindent 4 }}
+    app: prysm-beacon
+spec:
+  serviceName: prysm-beacon
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prysm-beacon
+  template:
+    metadata:
+      labels:
+        app: prysm-beacon
+      annotations:
+        {{- if .Values.prysm.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.prysm.metrics.port | quote }}
+        prometheus.io/path: "/metrics"
+        {{- end }}
+    spec:
+      enableServiceLinks: {{ .Values.enableServiceLinks }}
+      {{- if .Values.geth.enabled }}
+      initContainers:
+      - name: wait-for-geth
+        image: busybox:latest
+        command:
+        - sh
+        - -c
+        - |
+          echo "Waiting for Geth to be ready..."
+          until nc -z geth.{{ .Values.namespace.ethereum }}.svc.cluster.local {{ .Values.geth.authrpc.port }}; do
+            echo "Geth not ready yet..."
+            sleep 5
+          done
+          echo "Geth is ready!"
+      {{- end }}
+      containers:
+      - name: beacon-chain
+        image: "{{ .Values.prysm.image.repository }}:{{ .Values.prysm.image.tag }}"
+        imagePullPolicy: {{ .Values.prysm.image.pullPolicy }}
+        args:
+        - --{{ .Values.global.network }}
+        - --datadir=/data
+        - --execution-endpoint=http://geth.{{ .Values.namespace.ethereum }}.svc.cluster.local:{{ .Values.geth.authrpc.port }}
+        - --jwt-secret=/secrets/jwt.hex
+        - --rpc-host=0.0.0.0
+        - --rpc-port={{ .Values.prysm.rpc.port }}
+        - --grpc-gateway-host=0.0.0.0
+        - --grpc-gateway-port={{ .Values.prysm.grpc.port }}
+        {{- if .Values.prysm.metrics.enabled }}
+        - --monitoring-host=0.0.0.0
+        - --monitoring-port={{ .Values.prysm.metrics.port }}
+        {{- end }}
+        - --p2p-tcp-port={{ .Values.prysm.p2p.tcpPort }}
+        - --p2p-udp-port={{ .Values.prysm.p2p.udpPort }}
+        - --accept-terms-of-use
+        {{- if .Values.prysm.checkpointSync.enabled }}
+        - --checkpoint-sync-url={{ .Values.prysm.checkpointSync.url }}
+        - --genesis-beacon-api-url={{ .Values.prysm.checkpointSync.url }}
+        {{- end }}
+        - --historical-slasher-node={{ .Values.prysm.historicalSlasherNode }}
+        - --slots-per-archive-point={{ .Values.prysm.slotsPerArchivePoint }}
+        {{- if .Values.prysm.extraFlags }}
+        {{ .Values.prysm.extraFlags }}
+        {{- end }}
+        ports:
+        - containerPort: {{ .Values.prysm.rpc.port }}
+          name: http-rpc
+        - containerPort: {{ .Values.prysm.grpc.port }}
+          name: grpc
+        {{- if .Values.prysm.metrics.enabled }}
+        - containerPort: {{ .Values.prysm.metrics.port }}
+          name: metrics
+        {{- end }}
+        - containerPort: {{ .Values.prysm.p2p.tcpPort }}
+          name: p2p-tcp
+          protocol: TCP
+        - containerPort: {{ .Values.prysm.p2p.udpPort }}
+          name: p2p-udp
+          protocol: UDP
+        volumeMounts:
+        - name: prysm-beacon-data
+          mountPath: /data
+        - name: jwt-secret
+          mountPath: /secrets
+        resources:
+          {{- toYaml .Values.prysm.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /eth/v1/node/health
+            port: {{ .Values.prysm.grpc.port }}
+          initialDelaySeconds: 120
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /eth/v1/node/health
+            port: {{ .Values.prysm.grpc.port }}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: jwt-secret
+        secret:
+          secretName: jwt-secret
+  volumeClaimTemplates:
+  - metadata:
+      name: prysm-beacon-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.prysm.storage.storageClassName }}
+      resources:
+        requests:
+          storage: {{ .Values.prysm.storage.size }}
+{{- end }}

@@ -1,0 +1,216 @@
+# Default values for ethereum-node (Light Node Configuration)
+# This is optimized for storage-constrained environments (~75GB total)
+
+# Global settings
+global:
+  network: mainnet
+  storageClass: local-path
+
+# Namespace configuration
+namespace:
+  ethereum: ethereum
+  monitoring: monitoring
+
+# JWT secret configuration
+jwt:
+  # Leave empty to auto-generate, or provide your own 64-character hex string
+  secret: ""
+
+# Geth (Execution Layer) configuration
+geth:
+  enabled: true
+  image:
+    repository: ethereum/client-go
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  # Sync mode: "snap" (default, ~600GB), "light" (~20GB), "full" (~1TB+)
+  syncMode: light
+  
+  # Resource limits
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "4Gi"
+      cpu: "1000m"
+  
+  # Storage configuration
+  storage:
+    size: 20Gi
+    storageClassName: local-path
+  
+  # Network settings
+  maxPeers: 30
+  cache: 512
+  
+  # RPC configuration
+  http:
+    enabled: true
+    port: 8545
+    api: "eth,net,web3,admin"
+    vhosts: "*"
+    corsdomain: "*"
+  
+  ws:
+    enabled: true
+    port: 8546
+    api: "eth,net,web3"
+    origins: "*"
+  
+  # Auth RPC for consensus layer
+  authrpc:
+    port: 8551
+    vhosts: "*"
+  
+  # Metrics
+  metrics:
+    enabled: true
+    port: 6060
+  
+  # P2P ports
+  p2p:
+    tcpPort: 30303
+    udpPort: 30303
+  
+  # Additional Geth flags
+  extraFlags: |
+    --txlookuplimit=0
+
+# Prysm (Consensus Layer) configuration
+prysm:
+  enabled: true
+  image:
+    repository: gcr.io/prysmaticlabs/prysm/beacon-chain
+    tag: stable
+    pullPolicy: IfNotPresent
+  
+  # Resource limits
+  resources:
+    requests:
+      memory: "2Gi"
+      cpu: "500m"
+    limits:
+      memory: "8Gi"
+      cpu: "1000m"
+  
+  # Storage configuration
+  storage:
+    size: 40Gi
+    storageClassName: local-path
+  
+  # Checkpoint sync for faster initial sync
+  checkpointSync:
+    enabled: true
+    url: "https://beaconstate.info"
+  
+  # Storage optimization
+  slotsPerArchivePoint: 8192
+  historicalSlasherNode: false
+  
+  # RPC configuration
+  rpc:
+    port: 4000
+  
+  grpc:
+    port: 3500
+  
+  # Metrics
+  metrics:
+    enabled: true
+    port: 8080
+  
+  # P2P ports
+  p2p:
+    tcpPort: 13000
+    udpPort: 12000
+  
+  # Additional Prysm flags
+  extraFlags: ""
+
+# Monitoring stack configuration
+monitoring:
+  enabled: true
+  
+  # Prometheus configuration
+  prometheus:
+    enabled: true
+    image:
+      repository: prom/prometheus
+      tag: latest
+      pullPolicy: IfNotPresent
+    
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "2Gi"
+        cpu: "500m"
+    
+    storage:
+      size: 10Gi
+      storageClassName: local-path
+    
+    retention: "7d"
+    
+    service:
+      type: ClusterIP
+      port: 9090
+  
+  # Grafana configuration
+  grafana:
+    enabled: true
+    image:
+      repository: grafana/grafana
+      tag: latest
+      pullPolicy: IfNotPresent
+    
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "250m"
+    
+    storage:
+      size: 5Gi
+      storageClassName: local-path
+    
+    # Admin credentials
+    adminUser: admin
+    adminPassword: admin
+    
+    service:
+      type: ClusterIP
+      port: 3000
+
+# Peer Monitor configuration
+peerMonitor:
+  enabled: true
+  image:
+    repository: ghcr.io/yourusername/go-peer-monitor
+    tag: latest
+    pullPolicy: Always
+  
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "100m"
+  
+  service:
+    type: ClusterIP
+    port: 8080
+
+# Service configuration
+service:
+  type: ClusterIP
+  annotations: {}
+
+# Enable/disable service links in pods
+enableServiceLinks: false
