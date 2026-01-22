@@ -39,7 +39,11 @@ This project deploys a fully functional Ethereum Mainnet node on Kubernetes usin
 ## Prerequisites
 
 - Kubernetes cluster (local or cloud)
-  - Recommended: Minikube, Kind, or GKE/EKS/AKS
+  - **Mac**: OrbStack (recommended), Rancher Desktop, k3d, or Minikube
+  - **Windows**: Rancher Desktop (recommended), k3d, or Docker Desktop
+  - **Linux**: k3d (recommended), Rancher Desktop, or Minikube
+  - **Cloud**: GKE, EKS, or AKS
+  - See [DEPLOYMENT_ENVIRONMENTS.md](DEPLOYMENT_ENVIRONMENTS.md) for detailed setup guides
 - `kubectl` configured to access your cluster
 - Docker installed (for building the peer monitor image)
 - At least 1.5TB of storage available for blockchain data
