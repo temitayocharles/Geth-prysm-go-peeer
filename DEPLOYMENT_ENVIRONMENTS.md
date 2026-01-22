@@ -2,6 +2,37 @@
 
 This guide covers deploying the Ethereum node on various Kubernetes environments.
 
+## Quick Comparison: Local Development Tools
+
+| Tool | Platform | Speed | Resources | Best For | Difficulty |
+|------|----------|-------|-----------|----------|------------|
+| **OrbStack** | Mac only | ⚡⚡⚡ Fastest | Low | Mac users (Recommended) | Easy |
+| **Rancher Desktop** | Mac/Win/Linux | ⚡⚡ Fast | Medium | Cross-platform, Docker Desktop alternative | Easy |
+| **k3d** | Mac/Win/Linux | ⚡⚡⚡ Fastest | Low | Multiple clusters, testing | Medium |
+| **Minikube** | Mac/Win/Linux | ⚡ Slow | High | Traditional setup, full features | Medium |
+| **Kind** | Mac/Win/Linux | ⚡⚡ Fast | Medium | CI/CD, testing | Medium |
+| **Docker Desktop** | Mac/Windows | ⚡ Slow | High | Simplicity, beginners | Easy |
+
+### Recommendations by Use Case
+
+**Mac Users:**
+1. **OrbStack** (Best choice) - Fastest, lowest resource usage, native feel
+2. **Rancher Desktop** - Good Docker Desktop alternative
+3. **k3d** - If you need multiple clusters
+
+**Windows Users:**
+1. **Rancher Desktop** - Best overall experience
+2. **k3d** - Lightweight and fast
+3. **Docker Desktop** - Easiest setup
+
+**Linux Users:**
+1. **k3d** - Lightweight and fast
+2. **Rancher Desktop** - Full-featured
+3. **Minikube** - Traditional option
+
+**For Testing/CI:**
+- **k3d** - Fast cluster creation/deletion, multiple clusters
+
 ## Local Development
 
 ### Minikube
@@ -110,6 +141,337 @@ kubectl port-forward -n ethereum svc/geth 8545:8545
 - Easy setup on Mac/Windows
 - Limited resources
 - Good for basic testing
+
+### OrbStack (Mac - Recommended)
+
+**Why OrbStack:**
+- Significantly faster than Docker Desktop on Mac
+- Lower resource usage (CPU, memory)
+- Native Apple Silicon support
+- Built-in Kubernetes cluster
+- Excellent performance for local development
+
+**Setup:**
+
+```bash
+# Install OrbStack (https://orbstack.dev)
+brew install orbstack
+
+# Or download from https://orbstack.dev
+
+# Start OrbStack and enable Kubernetes in settings
+# OrbStack starts automatically on login
+
+# Verify cluster
+kubectl cluster-info
+
+# Deploy
+./scripts/deploy-all.sh
+
+# Build and load peer monitor image
+cd go-peer-monitor
+docker build -t peer-monitor:latest .
+# OrbStack automatically makes images available to k8s
+cd ..
+
+# Deploy peer monitor
+kubectl apply -f k8s/peer-monitor/
+```
+
+**Accessing Services:**
+
+```bash
+# Port forward (same as other environments)
+kubectl port-forward -n monitoring svc/grafana 3000:3000
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
+kubectl port-forward -n ethereum svc/geth 8545:8545
+```
+
+**Storage:**
+- OrbStack includes a default storage class
+- No additional configuration needed
+- Excellent disk I/O performance
+
+**Notes:**
+- Much faster than Docker Desktop on Mac
+- Lower battery consumption
+- Seamless Docker and Kubernetes integration
+- Can run Linux machines alongside containers
+- Native networking (no port forwarding complexity)
+
+**Pro Tips:**
+```bash
+# Check OrbStack status
+orb status
+
+# View resource usage
+orb info
+
+# OrbStack has excellent DNS - services are accessible at:
+# <service>.<namespace>.orb.local
+# Example: geth.ethereum.orb.local
+```
+
+### Rancher Desktop (Mac/Windows/Linux)
+
+**Why Rancher Desktop:**
+- Open source alternative to Docker Desktop
+- Available on Mac, Windows, and Linux
+- Choose between containerd or dockerd
+- Built-in Kubernetes (k3s)
+- No licensing restrictions
+
+**Setup:**
+
+```bash
+# Install Rancher Desktop
+# Mac: brew install rancher
+# Or download from https://rancherdesktop.io
+
+# Windows: Download installer from https://rancherdesktop.io
+# Or use Chocolatey: choco install rancher-desktop
+
+# Launch Rancher Desktop and configure:
+# - Container Runtime: dockerd (for Docker compatibility)
+# - Kubernetes: Enable and select version
+# - Memory: 16GB
+# - CPUs: 8
+
+# Verify cluster
+kubectl cluster-info
+
+# Verify storage class
+kubectl get storageclass
+# Should see 'local-path' as default
+
+# Deploy
+./scripts/deploy-all.sh
+
+# Build peer monitor image
+cd go-peer-monitor
+
+# For dockerd runtime:
+docker build -t peer-monitor:latest .
+
+# For containerd runtime:
+nerdctl build -t peer-monitor:latest .
+
+# Image is automatically available to k8s
+cd ..
+```
+
+**Windows-Specific Setup:**
+
+```powershell
+# Install Rancher Desktop via Chocolatey
+choco install rancher-desktop
+
+# Or download installer from https://rancherdesktop.io
+
+# After installation, configure in Rancher Desktop UI:
+# Settings → Kubernetes → Enable Kubernetes
+# Settings → Virtual Machine → Memory: 16GB, CPUs: 8
+
+# Verify setup (PowerShell)
+kubectl cluster-info
+kubectl get nodes
+
+# Deploy
+.\scripts\deploy-all.sh  # If using Git Bash
+# Or follow manual deployment steps
+```
+
+**Accessing Services:**
+
+```bash
+# Same port-forward commands work on all platforms
+kubectl port-forward -n monitoring svc/grafana 3000:3000
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
+kubectl port-forward -n ethereum svc/geth 8545:8545
+```
+
+**Notes:**
+- Uses k3s under the hood (lightweight Kubernetes)
+- local-path-provisioner included by default
+- Good Docker Desktop alternative
+- Free and open source
+- Consistent experience across platforms
+
+**Troubleshooting:**
+
+```bash
+# Reset Kubernetes if having issues
+# Rancher Desktop → Settings → Kubernetes → Reset Kubernetes
+
+# Check k3s logs (Mac/Linux)
+rdctl shell
+journalctl -u k3s -f
+
+# Windows: Check logs in Rancher Desktop UI
+```
+
+### k3d (Mac/Windows/Linux)
+
+**Why k3d:**
+- Extremely lightweight (k3s in Docker)
+- Multiple clusters on one machine
+- Very fast cluster creation/deletion
+- Perfect for testing
+- Cross-platform (Mac, Windows, Linux)
+
+**Setup:**
+
+```bash
+# Install k3d
+# Mac:
+brew install k3d
+
+# Windows (PowerShell):
+choco install k3d
+
+# Linux:
+wget -q -O - https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+
+# Create cluster with port mappings for P2P and services
+k3d cluster create ethereum \
+  --agents 2 \
+  --port 30303:30303@loadbalancer \
+  --port 8080:80@loadbalancer \
+  --port 3000:3000@server:0 \
+  --volume /tmp/ethereum-data:/data@all \
+  --k3s-arg "--disable=traefik@server:0"
+
+# Verify cluster
+kubectl cluster-info
+kubectl get nodes
+
+# k3d includes local-path storage by default
+kubectl get storageclass
+
+# Deploy
+./scripts/deploy-all.sh
+
+# Build and load peer monitor image
+cd go-peer-monitor
+docker build -t peer-monitor:latest .
+k3d image import peer-monitor:latest -c ethereum
+cd ..
+
+# Deploy peer monitor
+kubectl apply -f k8s/peer-monitor/
+```
+
+**Windows-Specific Commands:**
+
+```powershell
+# Create cluster (PowerShell)
+k3d cluster create ethereum `
+  --agents 2 `
+  --port "30303:30303@loadbalancer" `
+  --port "8080:80@loadbalancer" `
+  --port "3000:3000@server:0" `
+  --k3s-arg "--disable=traefik@server:0"
+
+# Import image (PowerShell)
+k3d image import peer-monitor:latest -c ethereum
+```
+
+**Advanced Configuration:**
+
+```bash
+# Create cluster with custom config file
+cat <<EOF > k3d-config.yaml
+apiVersion: k3d.io/v1alpha4
+kind: Simple
+metadata:
+  name: ethereum
+servers: 1
+agents: 2
+ports:
+  - port: 30303:30303
+    nodeFilters:
+      - loadbalancer
+  - port: 3000:3000
+    nodeFilters:
+      - server:0
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
+EOF
+
+k3d cluster create --config k3d-config.yaml
+
+# Deploy
+./scripts/deploy-all.sh
+```
+
+**Accessing Services:**
+
+```bash
+# With port mappings, some services are directly accessible:
+# Grafana: http://localhost:3000
+
+# For other services, use port-forward:
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
+kubectl port-forward -n ethereum svc/geth 8545:8545
+```
+
+**Cluster Management:**
+
+```bash
+# List clusters
+k3d cluster list
+
+# Stop cluster (preserves data)
+k3d cluster stop ethereum
+
+# Start cluster
+k3d cluster start ethereum
+
+# Delete cluster
+k3d cluster delete ethereum
+
+# Create multiple clusters for testing
+k3d cluster create ethereum-test
+k3d cluster create ethereum-prod
+
+# Switch between clusters
+kubectl config get-contexts
+kubectl config use-context k3d-ethereum-test
+```
+
+**Notes:**
+- Very fast: cluster creation in ~20 seconds
+- Multiple clusters don't interfere with each other
+- Easy cleanup: `k3d cluster delete <name>`
+- Great for CI/CD pipelines
+- Lower resource usage than full Kubernetes
+
+**Troubleshooting:**
+
+```bash
+# Check k3d version
+k3d version
+
+# View cluster info
+k3d cluster list
+k3d node list
+
+# Get kubeconfig
+k3d kubeconfig get ethereum
+
+# Check Docker containers
+docker ps | grep k3d
+
+# View logs
+k3d cluster logs ethereum
+```
 
 ## Cloud Providers
 
