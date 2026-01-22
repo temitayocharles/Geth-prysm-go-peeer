@@ -6,16 +6,16 @@ This project deploys a fully functional Ethereum Mainnet node on Kubernetes usin
 - **Monitoring**: Prometheus & Grafana
 - **Peer Monitoring**: Custom Go application
 
-## 🚀 Deployment Options
+## Deployment Options
 
-### 🎯 Helm (Recommended)
+### Helm (Recommended)
 Template-based deployment with easy configuration management:
 ```bash
 ./scripts/helm-deploy.sh          # Deploy Ethereum node (~75GB)
 ```
-📖 **[Helm Guide](./HELM_GUIDE.md)**
+**[Helm Guide](./HELM_GUIDE.md)**
 
-### ⚙️ kubectl (Traditional)
+### kubectl (Traditional)
 Direct Kubernetes manifest deployment:
 ```bash
 ./scripts/deploy.sh               # Deploy using kubectl
@@ -64,14 +64,14 @@ Direct Kubernetes manifest deployment:
 
 ### Storage Requirements
 
-**⚠️ CHOOSE YOUR SETUP BASED ON AVAILABLE STORAGE:**
+**CHOOSE YOUR SETUP BASED ON AVAILABLE STORAGE:**
 
 | Storage Available | Setup Type | Total Required | Capabilities |
 |-------------------|------------|----------------|--------------|
-| **< 100GB** | **Light Node** | ~75GB | ✅ Real-time data<br>❌ No historical queries<br>❌ Cannot validate |
-| **100GB - 500GB** | **Partial Sync** | ~100GB | ✅ Recent history<br>⚠️ Limited historical queries |
-| **500GB - 1TB** | **Snap Sync** | ~500GB | ✅ Most features<br>✅ Good historical data |
-| **1.5TB+** | **Full Node** | ~1.5TB | ✅ Complete archive<br>✅ All features |
+| **< 100GB** | **Light Node** | ~75GB | Real-time data<br>No historical queries<br>Cannot validate |
+| **100GB - 500GB** | **Partial Sync** | ~100GB | Recent history<br>Limited historical queries |
+| **500GB - 1TB** | **Snap Sync** | ~500GB | Most features<br>Good historical data |
+| **1.5TB+** | **Full Node** | ~1.5TB | Complete archive<br>All features |
 
 **If you have < 100GB available storage**, use the light client setup documented below and in [DEPLOYMENT_ENVIRONMENTS.md](DEPLOYMENT_ENVIRONMENTS.md#low-storage-setup--100gb-available).
 

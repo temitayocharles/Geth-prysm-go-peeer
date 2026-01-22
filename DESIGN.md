@@ -50,8 +50,8 @@ The project required:
 - Enables secure Engine API communication (EIP-3675)
 
 **Alternative Considered:**
-- Separate secrets with manual sync → Rejected due to complexity
-- ConfigMap storage → Rejected for security reasons
+- Separate secrets with manual sync -> Rejected due to complexity
+- ConfigMap storage -> Rejected for security reasons
 
 #### 4. Sync Optimization
 

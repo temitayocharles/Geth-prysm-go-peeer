@@ -24,8 +24,9 @@ geth:
     tag: latest
     pullPolicy: IfNotPresent
   
-  # Sync mode: "snap" (default, ~600GB), "light" (~20GB), "full" (~1TB+)
-  syncMode: light
+  # Sync mode: "snap" (default, ~600GB), "full" (~1TB+)
+  # Note: "light" mode is deprecated in newer Geth versions
+  syncMode: snap
   
   # Resource limits
   resources:
@@ -38,7 +39,7 @@ geth:
   
   # Storage configuration
   storage:
-    size: 20Gi
+    size: 600Gi
     storageClassName: local-path
   
   # Network settings
@@ -189,7 +190,7 @@ monitoring:
 
 # Peer Monitor configuration
 peerMonitor:
-  enabled: true
+  enabled: false
   image:
     repository: ghcr.io/yourusername/go-peer-monitor
     tag: latest
