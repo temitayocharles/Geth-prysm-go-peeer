@@ -90,11 +90,11 @@ prysm:
   # Resource limits
   resources:
     requests:
-      memory: "2Gi"
+      memory: "4Gi"
       cpu: "500m"
     limits:
-      memory: "8Gi"
-      cpu: "1000m"
+      memory: "12Gi"
+      cpu: "2000m"
   
   # Storage configuration
   storage:
