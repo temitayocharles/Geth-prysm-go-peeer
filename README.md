@@ -1,10 +1,21 @@
 # Ethereum Mainnet Node on Kubernetes
 
+
+## Start Here
+- Read [START_HERE.md](START_HERE.md) for the chronological playbook.
+
 This project deploys a fully functional Ethereum Mainnet node on Kubernetes using:
 - **Execution Client**: Geth
 - **Consensus Client**: Prysm
 - **Monitoring**: Prometheus & Grafana
 - **Peer Monitoring**: Custom Go application
+
+
+## Documentation Index
+- [.github/instructions/snyk_rules.instructions.md](.github/instructions/snyk_rules.instructions.md)
+- [DESIGN.md](DESIGN.md)
+- [HELM_GUIDE.md](HELM_GUIDE.md)
+- [INTERVIEW_PREP.md](INTERVIEW_PREP.md)
 
 ## Deployment Options
 
